@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +18,7 @@ public class ClinicaService {
 
     private final ClinicaRepository clinicaRepository;
 
+    @CacheEvict(value = "clinicas", allEntries = true)
     public ClinicaResponseDTO criar(
             ClinicaRequestDTO dto
     ) {
@@ -34,13 +37,13 @@ public class ClinicaService {
         );
     }
 
-    public Page<ClinicaResponseDTO> listar(
-            Pageable pageable
-    ) {
+    @Cacheable("clinicas")
+    public Page<ClinicaResponseDTO> listar(Pageable pageable) {
 
         return clinicaRepository
                 .findAll(pageable)
                 .map(this::converterParaDTO);
+
     }
 
     public ClinicaResponseDTO buscarPorId(
@@ -57,6 +60,7 @@ public class ClinicaService {
         return converterParaDTO(clinica);
     }
 
+    @CacheEvict(value = "clinicas", allEntries = true)
     public ClinicaResponseDTO atualizar(
             Long id,
             ClinicaRequestDTO dto
@@ -94,6 +98,7 @@ public class ClinicaService {
         );
     }
 
+    @CacheEvict(value = "clinicas", allEntries = true)
     public void deletar(Long id) {
 
         Clinica clinica =
