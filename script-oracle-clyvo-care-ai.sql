@@ -915,4 +915,264 @@ SELECT
     FN_CLASSIFICAR_RISCO(SCORE_RISCO) AS CLASSIFICACAO
 FROM TB_SCORES_RISCO_PETS;
 
+-- =====================================================
+-- PROCEDURE CADASTRAR TUTOR
+-- =====================================================
+
+CREATE OR REPLACE PROCEDURE CADASTRAR_TUTOR (
+
+    P_NOME_TUTOR IN VARCHAR2,
+    P_CPF_TUTOR IN VARCHAR2,
+    P_EMAIL_TUTOR IN VARCHAR2,
+    P_TELEFONE_TUTOR IN VARCHAR2,
+    P_DATA_NASCIMENTO IN DATE
+
+)
+IS
+BEGIN
+
+    INSERT INTO TB_TUTORES (
+        NOME_TUTOR,
+        CPF_TUTOR,
+        EMAIL_TUTOR,
+        TELEFONE_TUTOR,
+        DATA_NASCIMENTO_TUTOR
+    )
+    VALUES (
+        P_NOME_TUTOR,
+        P_CPF_TUTOR,
+        P_EMAIL_TUTOR,
+        P_TELEFONE_TUTOR,
+        P_DATA_NASCIMENTO
+    );
+
+    COMMIT;
+
+EXCEPTION
+
+    WHEN DUP_VAL_ON_INDEX THEN
+
+        REGISTRAR_LOG_ERRO(
+            'CADASTRAR_TUTOR',
+            SQLCODE,
+            'CPF OU EMAIL DUPLICADO'
+        );
+
+    WHEN VALUE_ERROR THEN
+
+        REGISTRAR_LOG_ERRO(
+            'CADASTRAR_TUTOR',
+            SQLCODE,
+            'ERRO DE VALOR INFORMADO'
+        );
+
+    WHEN OTHERS THEN
+
+        REGISTRAR_LOG_ERRO(
+            'CADASTRAR_TUTOR',
+            SQLCODE,
+            SQLERRM
+        );
+
+END;
+/
+
+-- =====================================================
+-- RELATÓRIO 1
+-- TOTAL DE PETS POR CLÍNICA
+-- =====================================================
+
+DECLARE
+BEGIN
+
+    FOR V_REG IN (
+
+        SELECT
+            C.NOME_FANTASIA,
+            COUNT(P.ID_PET) AS TOTAL_PETS
+
+        FROM TB_CLINICAS C
+
+        INNER JOIN TB_VETERINARIOS V
+            ON C.ID_CLINICA = V.ID_CLINICA
+
+        INNER JOIN TB_CONSULTAS CO
+            ON V.ID_VETERINARIO = CO.ID_VETERINARIO
+
+        INNER JOIN TB_PETS P
+            ON CO.ID_PET = P.ID_PET
+
+        GROUP BY C.NOME_FANTASIA
+
+        ORDER BY TOTAL_PETS DESC
+
+    ) LOOP
+
+        DBMS_OUTPUT.PUT_LINE(
+            'CLINICA: ' || V_REG.NOME_FANTASIA ||
+            ' | TOTAL PETS: ' || V_REG.TOTAL_PETS
+        );
+
+    END LOOP;
+
+END;
+/
+
+-- =====================================================
+-- RELATÓRIO 2
+-- TOTAL DE CONSULTAS POR VETERINÁRIO
+-- =====================================================
+
+DECLARE
+BEGIN
+
+    FOR V_REG IN (
+
+        SELECT
+            V.NOME_VETERINARIO,
+            COUNT(C.ID_CONSULTA) AS TOTAL_CONSULTAS
+
+        FROM TB_VETERINARIOS V
+
+        INNER JOIN TB_CONSULTAS C
+            ON V.ID_VETERINARIO = C.ID_VETERINARIO
+
+        GROUP BY V.NOME_VETERINARIO
+
+        ORDER BY TOTAL_CONSULTAS DESC
+
+    ) LOOP
+
+        DBMS_OUTPUT.PUT_LINE(
+            'VETERINÁRIO: ' || V_REG.NOME_VETERINARIO ||
+            ' | CONSULTAS: ' || V_REG.TOTAL_CONSULTAS
+        );
+
+    END LOOP;
+
+END;
+/
+
+-- =====================================================
+-- RELATÓRIO LAG / LEAD
+-- =====================================================
+
+SELECT
+
+    NOME_PET,
+
+    NVL(
+        LAG(NOME_PET)
+        OVER (ORDER BY ID_PET),
+        'Vazio'
+    ) AS PET_ANTERIOR,
+
+    NVL(
+        LEAD(NOME_PET)
+        OVER (ORDER BY ID_PET),
+        'Vazio'
+    ) AS PROXIMO_PET
+
+FROM TB_PETS;
+
+-- =====================================================
+-- RELATÓRIO 3
+-- CLASSIFICAÇÃO DE RISCO
+-- =====================================================
+
+DECLARE
+
+    CURSOR C_RISCO IS
+
+        SELECT
+            NOME_PET,
+            SCORE_RISCO,
+            CLASSIFICACAO
+        FROM VW_PETS_RISCO;
+
+BEGIN
+
+    FOR V_REG IN C_RISCO LOOP
+
+        IF V_REG.CLASSIFICACAO = 'CRITICO' THEN
+
+            DBMS_OUTPUT.PUT_LINE(
+                'RISCO CRÍTICO: ' ||
+                V_REG.NOME_PET
+            );
+
+        ELSIF V_REG.CLASSIFICACAO = 'ALTO' THEN
+
+            DBMS_OUTPUT.PUT_LINE(
+                'RISCO ALTO: ' ||
+                V_REG.NOME_PET
+            );
+
+        END IF;
+
+    END LOOP;
+
+END;
+/
+
+-- =====================================================
+-- RELATÓRIO 4
+-- VACINAS ATRASADAS
+-- =====================================================
+
+DECLARE
+
+    CURSOR C_VACINAS IS
+
+        SELECT
+            NOME_PET,
+            NOME_VACINA
+        FROM VW_VACINAS_ATRASADAS;
+
+BEGIN
+
+    FOR V_REG IN C_VACINAS LOOP
+
+        DBMS_OUTPUT.PUT_LINE(
+            'PET: ' || V_REG.NOME_PET ||
+            ' | VACINA ATRASADA: ' ||
+            V_REG.NOME_VACINA
+        );
+
+    END LOOP;
+
+END;
+/
+
+-- =====================================================
+-- RELATÓRIO SUMARIZADO
+-- =====================================================
+
+DECLARE
+
+    V_TOTAL_PETS NUMBER;
+    V_MEDIA_PESO NUMBER;
+
+BEGIN
+
+    SELECT
+        COUNT(*),
+        AVG(PESO)
+    INTO
+        V_TOTAL_PETS,
+        V_MEDIA_PESO
+    FROM TB_PETS;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'TOTAL DE PETS: ' || V_TOTAL_PETS
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'MÉDIA DE PESO: ' ||
+        ROUND(V_MEDIA_PESO, 2)
+    );
+
+END;
+/
+
 COMMIT;
