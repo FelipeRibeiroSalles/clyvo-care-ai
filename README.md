@@ -67,6 +67,91 @@ Banco de dados utilizado para persistência e testes da aplicação.
 
 ---
 
+# ▶️ How To — Como Executar o Projeto
+
+## 1. Clonar o Repositório
+
+```bash
+git clone https://github.com/FelipeRibeiroSalles/clyvo-care-ai.git
+```
+
+---
+
+## 2. Entrar na Pasta do Projeto
+
+```bash
+cd clyvo-care-ai
+```
+
+---
+
+## 3. Gerar o Build da Aplicação
+
+```bash
+chmod +x mvnw
+
+./mvnw clean package -DskipTests
+```
+
+---
+
+## 4. Executar Containers Docker
+
+```bash
+sudo docker-compose up --build -d
+```
+
+---
+
+## 5. Verificar Containers em Execução
+
+```bash
+sudo docker ps
+```
+
+---
+
+# 📘 Swagger OpenAPI
+
+A documentação da API pode ser acessada através do Swagger:
+
+```txt
+http://20.63.71.46:8080/swagger-ui/index.html
+```
+
+---
+
+# 🗄️ H2 Console
+
+Acesso ao console do banco H2:
+
+```txt
+http://20.63.71.46:8080/h2-console
+```
+
+## Configuração H2
+
+### JDBC URL
+
+```txt
+jdbc:h2:mem:clyvodb
+```
+
+### User
+
+```txt
+sa
+```
+
+### Password
+
+```txt
+(deixar vazio)
+```
+
+
+---
+
 # 📂 Estrutura do Projeto
 
 ```bash
@@ -78,3 +163,5 @@ clyvo-care-ai/
 ├── pom.xml
 ├── README.md
 └── src/
+
+
